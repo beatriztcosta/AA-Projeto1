@@ -1,4 +1,5 @@
 import sys
+from tkinter import S
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,6 +32,7 @@ def create_ml_data():
             vector_size = h*w
             flat_img_array = img_array.flatten()
             flat_img_array = np.reshape(flat_img_array,(1,vector_size))
+            flat_img_array = flat_img_array / 255
             img_dict[idx] = {'features': flat_img_array, 'subspecie': ds['subspecies'][idx]}
     
     #mean_width = mean_width/i
@@ -50,7 +52,6 @@ def create_ml_data():
             pad_features = np.pad(features, ((0,0),(0,size_dif)), mode='constant', constant_values=0)
         pad_features = pad_features.flatten()
         pad_features = ' '.join(map(str, pad_features))
-        #print(pad_features)
         features_array.append(pad_features)
         subspecies_array.append(ds['subspecies'][key])
         
@@ -60,31 +61,31 @@ def create_ml_data():
 
 def test_csv_read():
     ds = pd.read_csv('bee_dataset/ml_data.csv')
-    X=ds['features']
+    features=ds['features']
     y=ds['class']
-    print(X.shape)
-    n_examples = X.shape[0]
+    #print(features.shape)
+    n_examples = features.shape[0]
     feature_size = size*size
-    arr = np.empty((n_examples,feature_size), int)
+    X = np.zeros((n_examples,feature_size), float)
     #np.fromstring(X.tostring(),a.dtype).reshape(a.shape)
-    for idx,f in enumerate(X):
-        arr_f = np.fromstring(f, dtype=int, sep=' ')
+    for idx,f in enumerate(features):
+        arr_f = np.fromstring(f, dtype=float, sep=' ')
         arr_f = np.reshape(arr_f, (1,arr_f.shape[0]))
-        arr[idx,:] = np.copy(arr_f)
+        X[idx,:] = np.copy(arr_f)
         
     #X = np.copy(arr)
+    print(X.shape)
 
-    return arr
+    return X
 
 def show_img(X):
     print(X[0])
-    a = X[0] / 255
-    #a = np.reshape(a,(75,75))
+    a = np.reshape(X[0],(size,size))
     print(type(a))
     print(a)
 
-    cv2.imshow('img',a)
+    #cv2.imshow('img',a)
 
-create_ml_data()
+#create_ml_data()
 X = test_csv_read()
-#show_img(X)
+show_img(X)
