@@ -11,7 +11,7 @@ from numpy import genfromtxt
 from scipy.io import loadmat
 np.set_printoptions(threshold=sys.maxsize)
 
-size = 50
+size = 100
 
 def create_ml_data():
     ds = pd.read_csv('bee_dataset/relevant_bee_data.csv')
@@ -42,6 +42,28 @@ def create_ml_data():
     df = pd.DataFrame(data=data, columns=['features', 'class'])
     df.to_csv('bee_dataset/ml_data.csv', index=False)
 
+def create_ml_data_resized():
+    ds = pd.read_csv('bee_dataset/relevant_bee_data.csv')
+    vector_size = size*size
+    features_array = []
+    subspecies_array = []
+    for idx,file in enumerate(ds['file']):
+        img_array = cv2.imread('bee_dataset/bee_imgs/'+file, cv2.IMREAD_GRAYSCALE)
+        h,w = img_array.shape
+        dim = (size,size)
+        resized_img_array = cv2.resize(img_array, dim, interpolation = cv2.INTER_AREA)
+        flat_img_array = resized_img_array.flatten()
+        flat_img_array = np.reshape(flat_img_array,(1,vector_size))
+        flat_img_array = flat_img_array / 255
+        flat_img_array = flat_img_array.flatten()
+        str_flat_img_array = ' '.join(map(str, flat_img_array))
+        features_array.append(str_flat_img_array)
+        subspecies_array.append(ds['subspecies'][idx])
+        
+    data = {'features': features_array, 'class': subspecies_array}
+    df = pd.DataFrame(data=data, columns=['features', 'class'])
+    df.to_csv('bee_dataset/ml_data_resized.csv', index=False)
+
 def test_csv_read():
     ds = pd.read_csv('bee_dataset/ml_data.csv')
     features=ds['features']
@@ -58,15 +80,96 @@ def test_csv_read():
 
     return X
 
-def show_img(X):
-    print(X[0])
-    a = np.reshape(X[0],(size,size))
-    print(type(a))
-    print(a)
+def show_img():
+    img = "bee_dataset/bee_imgs/003_034.png"
+    img = cv2.imread(img,cv2.IMREAD_COLOR)
+    
+    h,w,c = img.shape
 
-    #cv2.imshow('img',a)
+    #cv2.imshow('img',new_img)
+    #cv2.waitKey(0) 
+
+#-------------/RGB/--------------
+
+def create_ml_data_rgb():
+    ds = pd.read_csv('bee_dataset/relevant_bee_data.csv')
+    vector_size = size*size
+    features_array = []
+    subspecies_array = []
+    for idx,file in enumerate(ds['file']):
+        img_array = cv2.imread('bee_dataset/bee_imgs/'+file, cv2.IMREAD_COLOR)
+        h,w,c = img_array.shape
+        if h <= size and w <= size:
+            str_flat_img_array = ''
+            for channel in range(c):
+                img_array_c = np.copy(img_array[:,:,channel])
+                h_dif = size-h
+                zeros = np.zeros((h_dif,w), dtype=int)
+                img_array_c = np.vstack((img_array_c,zeros))
+
+                w_dif = size-w
+                zeros = np.zeros((size,w_dif), dtype=int)
+                
+                img_array_c = np.hstack((img_array_c,zeros))
+                flat_img_array = img_array_c.flatten()
+                flat_img_array = np.reshape(flat_img_array,(1,vector_size))
+                flat_img_array = flat_img_array / 255
+                flat_img_array = flat_img_array.flatten()
+                
+                if not str_flat_img_array:
+                    str_flat_img_array = ' '.join(map(str, flat_img_array))
+                else:
+                    str_flat_img_array = str_flat_img_array + ' ' + ' '.join(map(str, flat_img_array))
+
+            features_array.append(str_flat_img_array)
+            subspecies_array.append(ds['subspecies'][idx])
+        
+    data = {'features': features_array, 'class': subspecies_array}
+    df = pd.DataFrame(data=data, columns=['features', 'class'])
+    df.to_csv('bee_dataset/ml_data_rgb.csv', index=False)
+
+def show_img_rgb():
+    img = "bee_dataset/bee_imgs/003_034.png"
+    img = cv2.imread(img,cv2.IMREAD_COLOR)
+    
+    h,w,c = img.shape
+    print(img.shape)
+    vector_size = size*size
+    str_flat_img_array = ''
+
+    for channel in range(c):
+        img_array_c = np.copy(img[:,:,channel])
+        h_dif = size-h
+        zeros = np.zeros((h_dif,w), dtype=int)
+        img_array_c = np.vstack((img_array_c,zeros))
+        w_dif = size-w
+        zeros = np.zeros((size,w_dif), dtype=int)
+        
+        img_array_c = np.hstack((img_array_c,zeros))
+        flat_img_array = img_array_c.flatten()
+        flat_img_array = np.reshape(flat_img_array,(1,vector_size))
+        flat_img_array = flat_img_array #/ 255
+        flat_img_array = flat_img_array.flatten()
+        
+        if not str_flat_img_array:
+            str_flat_img_array = ' '.join(map(str, flat_img_array))
+        else:
+            str_flat_img_array = str_flat_img_array + ' ' + ' '.join(map(str, flat_img_array))
 
 
-create_ml_data()
-X = test_csv_read()
-show_img(X)
+    #arr_f = np.fromstring(str_flat_img_array, dtype=float, sep=' ')
+    arr_f = np.fromstring(str_flat_img_array, dtype=np.uint8, sep=' ')
+    new_img = np.reshape(arr_f,(3,size,size)).transpose(1,2,0) #.reshape(arr_f, (size,size,3))
+    print(img[0])
+    print(new_img[0])
+    print(new_img.shape)
+    cv2.imshow('img',new_img)
+    cv2.waitKey(0) 
+
+#create_ml_data()
+create_ml_data_resized()
+#X = test_csv_read()
+#show_img()
+
+#create_ml_data_rgb()
+#show_img_rgb()
